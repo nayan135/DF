@@ -13,7 +13,7 @@ from DF.utilities import conditional_download, resolve_relative_path, is_image, 
 
 FACE_SWAPPER = None
 THREAD_LOCK = threading.Lock()
-NAME = 'ROOP.FACE-SWAPPER'
+NAME = 'DF.FACE-SWAPPER'
 
 
 def get_face_swapper() -> Any:
