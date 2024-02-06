@@ -3,13 +3,13 @@ import cv2
 import insightface
 import threading
 
-import DFF.globals
-import DFF.processors.frame.core
-from DFF.core import update_status
-from DFF.face_analyser import get_one_face, get_many_faces, find_similar_face
-from DFF.face_reference import get_face_reference, set_face_reference, clear_face_reference
-from DFF.typing import Face, Frame
-from DFF.utilities import conditional_download, resolve_relative_path, is_image, is_video
+import DF.globals
+import DF.processors.frame.core
+from DF.core import update_status
+from DF.face_analyser import get_one_face, get_many_faces, find_similar_face
+from DF.face_reference import get_face_reference, set_face_reference, clear_face_reference
+from DF.typing import Face, Frame
+from DF.utilities import conditional_download, resolve_relative_path, is_image, is_video
 
 FACE_SWAPPER = None
 THREAD_LOCK = threading.Lock()
@@ -22,7 +22,7 @@ def get_face_swapper() -> Any:
     with THREAD_LOCK:
         if FACE_SWAPPER is None:
             model_path = resolve_relative_path('../models/inswapper_128.onnx')
-            FACE_SWAPPER = insightface.model_zoo.get_model(model_path, providers=DFF.globals.execution_providers)
+            FACE_SWAPPER = insightface.model_zoo.get_model(model_path, providers=DF.globals.execution_providers)
     return FACE_SWAPPER
 
 
@@ -39,13 +39,13 @@ def pre_check() -> bool:
 
 
 def pre_start() -> bool:
-    if not is_image(DFF.globals.source_path):
+    if not is_image(DF.globals.source_path):
         update_status('Select an image for source path.', NAME)
         return False
-    elif not get_one_face(cv2.imread(DFF.globals.source_path)):
+    elif not get_one_face(cv2.imread(DF.globals.source_path)):
         update_status('No face in source path detected.', NAME)
         return False
-    if not is_image(DFF.globals.target_path) and not is_video(DFF.globals.target_path):
+    if not is_image(DF.globals.target_path) and not is_video(DF.globals.target_path):
         update_status('Select an image or video for target path.', NAME)
         return False
     return True
@@ -61,7 +61,7 @@ def swap_face(source_face: Face, target_face: Face, temp_frame: Frame) -> Frame:
 
 
 def process_frame(source_face: Face, reference_face: Face, temp_frame: Frame) -> Frame:
-    if DFF.globals.many_faces:
+    if DF.globals.many_faces:
         many_faces = get_many_faces(temp_frame)
         if many_faces:
             for target_face in many_faces:
@@ -75,7 +75,7 @@ def process_frame(source_face: Face, reference_face: Face, temp_frame: Frame) ->
 
 def process_frames(source_path: str, temp_frame_paths: List[str], update: Callable[[], None]) -> None:
     source_face = get_one_face(cv2.imread(source_path))
-    reference_face = None if DFF.globals.many_faces else get_face_reference()
+    reference_face = None if DF.globals.many_faces else get_face_reference()
     for temp_frame_path in temp_frame_paths:
         temp_frame = cv2.imread(temp_frame_path)
         result = process_frame(source_face, reference_face, temp_frame)
@@ -87,14 +87,14 @@ def process_frames(source_path: str, temp_frame_paths: List[str], update: Callab
 def process_image(source_path: str, target_path: str, output_path: str) -> None:
     source_face = get_one_face(cv2.imread(source_path))
     target_frame = cv2.imread(target_path)
-    reference_face = None if DFF.globals.many_faces else get_one_face(target_frame, DFF.globals.reference_face_position)
+    reference_face = None if DF.globals.many_faces else get_one_face(target_frame, DF.globals.reference_face_position)
     result = process_frame(source_face, reference_face, target_frame)
     cv2.imwrite(output_path, result)
 
 
 def process_video(source_path: str, temp_frame_paths: List[str]) -> None:
-    if not DFF.globals.many_faces and not get_face_reference():
-        reference_frame = cv2.imread(temp_frame_paths[DFF.globals.reference_frame_number])
-        reference_face = get_one_face(reference_frame, DFF.globals.reference_face_position)
+    if not DF.globals.many_faces and not get_face_reference():
+        reference_frame = cv2.imread(temp_frame_paths[DF.globals.reference_frame_number])
+        reference_face = get_one_face(reference_frame, DF.globals.reference_face_position)
         set_face_reference(reference_face)
-    DFF.processors.frame.core.process_video(source_path, temp_frame_paths, process_frames)
+    DF.processors.frame.core.process_video(source_path, temp_frame_paths, process_frames)

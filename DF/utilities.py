@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import List, Optional
 from tqdm import tqdm
 
-import DFF.globals
+import DF.globals
 
 TEMP_DIRECTORY = 'temp'
 TEMP_VIDEO_FILE = 'temp.mp4'
@@ -21,7 +21,7 @@ if platform.system().lower() == 'darwin':
 
 
 def run_ffmpeg(args: List[str]) -> bool:
-    commands = ['ffmpeg', '-hide_banner', '-loglevel', DFF.globals.log_level]
+    commands = ['ffmpeg', '-hide_banner', '-loglevel', DF.globals.log_level]
     commands.extend(args)
     try:
         subprocess.check_output(commands, stderr=subprocess.STDOUT)
@@ -44,18 +44,18 @@ def detect_fps(target_path: str) -> float:
 
 def extract_frames(target_path: str, fps: float = 30) -> bool:
     temp_directory_path = get_temp_directory_path(target_path)
-    temp_frame_quality = DFF.globals.temp_frame_quality * 31 // 100
-    return run_ffmpeg(['-hwaccel', 'auto', '-i', target_path, '-q:v', str(temp_frame_quality), '-pix_fmt', 'rgb24', '-vf', 'fps=' + str(fps), os.path.join(temp_directory_path, '%04d.' + DFF.globals.temp_frame_format)])
+    temp_frame_quality = DF.globals.temp_frame_quality * 31 // 100
+    return run_ffmpeg(['-hwaccel', 'auto', '-i', target_path, '-q:v', str(temp_frame_quality), '-pix_fmt', 'rgb24', '-vf', 'fps=' + str(fps), os.path.join(temp_directory_path, '%04d.' + DF.globals.temp_frame_format)])
 
 
 def create_video(target_path: str, fps: float = 30) -> bool:
     temp_output_path = get_temp_output_path(target_path)
     temp_directory_path = get_temp_directory_path(target_path)
-    output_video_quality = (DFF.globals.output_video_quality + 1) * 51 // 100
-    commands = ['-hwaccel', 'auto', '-r', str(fps), '-i', os.path.join(temp_directory_path, '%04d.' + DFF.globals.temp_frame_format), '-c:v', DFF.globals.output_video_encoder]
-    if DFF.globals.output_video_encoder in ['libx264', 'libx265', 'libvpx']:
+    output_video_quality = (DF.globals.output_video_quality + 1) * 51 // 100
+    commands = ['-hwaccel', 'auto', '-r', str(fps), '-i', os.path.join(temp_directory_path, '%04d.' + DF.globals.temp_frame_format), '-c:v', DF.globals.output_video_encoder]
+    if DF.globals.output_video_encoder in ['libx264', 'libx265', 'libvpx']:
         commands.extend(['-crf', str(output_video_quality)])
-    if DFF.globals.output_video_encoder in ['h264_nvenc', 'hevc_nvenc']:
+    if DF.globals.output_video_encoder in ['h264_nvenc', 'hevc_nvenc']:
         commands.extend(['-cq', str(output_video_quality)])
     commands.extend(['-pix_fmt', 'yuv420p', '-vf', 'colorspace=bt709:iall=bt601-6-625:fast=1', '-y', temp_output_path])
     return run_ffmpeg(commands)
@@ -70,7 +70,7 @@ def restore_audio(target_path: str, output_path: str) -> None:
 
 def get_temp_frame_paths(target_path: str) -> List[str]:
     temp_directory_path = get_temp_directory_path(target_path)
-    return glob.glob((os.path.join(glob.escape(temp_directory_path), '*.' + DFF.globals.temp_frame_format)))
+    return glob.glob((os.path.join(glob.escape(temp_directory_path), '*.' + DF.globals.temp_frame_format)))
 
 
 def get_temp_directory_path(target_path: str) -> str:
@@ -109,7 +109,7 @@ def move_temp(target_path: str, output_path: str) -> None:
 def clean_temp(target_path: str) -> None:
     temp_directory_path = get_temp_directory_path(target_path)
     parent_directory_path = os.path.dirname(temp_directory_path)
-    if not DFF.globals.keep_frames and os.path.isdir(temp_directory_path):
+    if not DF.globals.keep_frames and os.path.isdir(temp_directory_path):
         shutil.rmtree(temp_directory_path)
     if os.path.exists(parent_directory_path) and not os.listdir(parent_directory_path):
         os.rmdir(parent_directory_path)

@@ -3,12 +3,12 @@ import cv2
 import threading
 from gfpgan.utils import GFPGANer
 
-import DFF.globals
-import DFF.processors.frame.core
-from DFF.core import update_status
-from DFF.face_analyser import get_many_faces
-from DFF.typing import Frame, Face
-from DFF.utilities import conditional_download, resolve_relative_path, is_image, is_video
+import DF.globals
+import DF.processors.frame.core
+from DF.core import update_status
+from DF.face_analyser import get_many_faces
+from DF.typing import Frame, Face
+from DF.utilities import conditional_download, resolve_relative_path, is_image, is_video
 
 FACE_ENHANCER = None
 THREAD_SEMAPHORE = threading.Semaphore()
@@ -28,9 +28,9 @@ def get_face_enhancer() -> Any:
 
 
 def get_device() -> str:
-    if 'CUDAExecutionProvider' in DFF.globals.execution_providers:
+    if 'CUDAExecutionProvider' in DF.globals.execution_providers:
         return 'cuda'
-    if 'CoreMLExecutionProvider' in DFF.globals.execution_providers:
+    if 'CoreMLExecutionProvider' in DF.globals.execution_providers:
         return 'mps'
     return 'cpu'
 
@@ -48,7 +48,7 @@ def pre_check() -> bool:
 
 
 def pre_start() -> bool:
-    if not is_image(DFF.globals.target_path) and not is_video(DFF.globals.target_path):
+    if not is_image(DF.globals.target_path) and not is_video(DF.globals.target_path):
         update_status('Select an image or video for target path.', NAME)
         return False
     return True
@@ -101,4 +101,4 @@ def process_image(source_path: str, target_path: str, output_path: str) -> None:
 
 
 def process_video(source_path: str, temp_frame_paths: List[str]) -> None:
-    DFF.processors.frame.core.process_video(None, temp_frame_paths, process_frames)
+    DF.processors.frame.core.process_video(None, temp_frame_paths, process_frames)

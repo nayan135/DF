@@ -1,6 +1,6 @@
 from typing import Optional
 
-from DFF.typing import Face
+from DF.typing import Face
 
 FACE_REFERENCE = None
 

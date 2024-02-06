@@ -4,7 +4,7 @@ import opennsfw2
 from PIL import Image
 from keras import Model
 
-from DFF.typing import Frame
+from DF.typing import Frame
 
 PREDICTOR = None
 THREAD_LOCK = threading.Lock()

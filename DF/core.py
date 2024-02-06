@@ -15,12 +15,12 @@ import shutil
 import argparse
 import onnxruntime
 import tensorflow
-import DFF.globals
-import DFF.metadata
-import DFF.ui as ui
-from DFF.predictor import predict_image, predict_video
-from DFF.processors.frame.core import get_frame_processors_modules
-from DFF.utilities import has_image_extension, is_image, is_video, detect_fps, create_video, extract_frames, get_temp_frame_paths, restore_audio, create_temp, move_temp, clean_temp, normalize_output_path
+import DF.globals
+import DF.metadata
+import DF.ui as ui
+from DF.predictor import predict_image, predict_video
+from DF.processors.frame.core import get_frame_processors_modules
+from DF.utilities import has_image_extension, is_image, is_video, detect_fps, create_video, extract_frames, get_temp_frame_paths, restore_audio, create_temp, move_temp, clean_temp, normalize_output_path
 
 warnings.filterwarnings('ignore', category=FutureWarning, module='insightface')
 warnings.filterwarnings('ignore', category=UserWarning, module='torchvision')
@@ -47,29 +47,29 @@ def parse_args() -> None:
     program.add_argument('--max-memory', help='maximum amount of RAM in GB', dest='max_memory', type=int)
     program.add_argument('--execution-provider', help='available execution provider (choices: cpu, ...)', dest='execution_provider', default=['cpu'], choices=suggest_execution_providers(), nargs='+')
     program.add_argument('--execution-threads', help='number of execution threads', dest='execution_threads', type=int, default=suggest_execution_threads())
-    program.add_argument('-v', '--version', action='version', version=f'{DFF.metadata.name} {DFF.metadata.version}')
+    program.add_argument('-v', '--version', action='version', version=f'{DF.metadata.name} {DF.metadata.version}')
 
     args = program.parse_args()
 
-    DFF.globals.source_path = args.source_path
-    DFF.globals.target_path = args.target_path
-    DFF.globals.output_path = normalize_output_path(DFF.globals.source_path, DFF.globals.target_path, args.output_path)
-    DFF.globals.headless = DFF.globals.source_path is not None and DFF.globals.target_path is not None and DFF.globals.output_path is not None
-    DFF.globals.frame_processors = args.frame_processor
-    DFF.globals.keep_fps = args.keep_fps
-    DFF.globals.keep_frames = args.keep_frames
-    DFF.globals.skip_audio = args.skip_audio
-    DFF.globals.many_faces = args.many_faces
-    DFF.globals.reference_face_position = args.reference_face_position
-    DFF.globals.reference_frame_number = args.reference_frame_number
-    DFF.globals.similar_face_distance = args.similar_face_distance
-    DFF.globals.temp_frame_format = args.temp_frame_format
-    DFF.globals.temp_frame_quality = args.temp_frame_quality
-    DFF.globals.output_video_encoder = args.output_video_encoder
-    DFF.globals.output_video_quality = args.output_video_quality
-    DFF.globals.max_memory = args.max_memory
-    DFF.globals.execution_providers = decode_execution_providers(args.execution_provider)
-    DFF.globals.execution_threads = args.execution_threads
+    DF.globals.source_path = args.source_path
+    DF.globals.target_path = args.target_path
+    DF.globals.output_path = normalize_output_path(DF.globals.source_path, DF.globals.target_path, args.output_path)
+    DF.globals.headless = DF.globals.source_path is not None and DF.globals.target_path is not None and DF.globals.output_path is not None
+    DF.globals.frame_processors = args.frame_processor
+    DF.globals.keep_fps = args.keep_fps
+    DF.globals.keep_frames = args.keep_frames
+    DF.globals.skip_audio = args.skip_audio
+    DF.globals.many_faces = args.many_faces
+    DF.globals.reference_face_position = args.reference_face_position
+    DF.globals.reference_frame_number = args.reference_frame_number
+    DF.globals.similar_face_distance = args.similar_face_distance
+    DF.globals.temp_frame_format = args.temp_frame_format
+    DF.globals.temp_frame_quality = args.temp_frame_quality
+    DF.globals.output_video_encoder = args.output_video_encoder
+    DF.globals.output_video_quality = args.output_video_quality
+    DF.globals.max_memory = args.max_memory
+    DF.globals.execution_providers = decode_execution_providers(args.execution_provider)
+    DF.globals.execution_threads = args.execution_threads
 
 
 def encode_execution_providers(execution_providers: List[str]) -> List[str]:
@@ -99,10 +99,10 @@ def limit_resources() -> None:
             tensorflow.config.experimental.VirtualDeviceConfiguration(memory_limit=1024)
         ])
     # limit memory usage
-    if DFF.globals.max_memory:
-        memory = DFF.globals.max_memory * 1024 ** 3
+    if DF.globals.max_memory:
+        memory = DF.globals.max_memory * 1024 ** 3
         if platform.system().lower() == 'darwin':
-            memory = DFF.globals.max_memory * 1024 ** 6
+            memory = DF.globals.max_memory * 1024 ** 6
         if platform.system().lower() == 'windows':
             import ctypes
             kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
@@ -124,84 +124,84 @@ def pre_check() -> bool:
 
 def update_status(message: str, scope: str = 'ROOP.CORE') -> None:
     print(f'[{scope}] {message}')
-    if not DFF.globals.headless:
+    if not DF.globals.headless:
         ui.update_status(message)
 
 
 def start() -> None:
-    for frame_processor in get_frame_processors_modules(DFF.globals.frame_processors):
+    for frame_processor in get_frame_processors_modules(DF.globals.frame_processors):
         if not frame_processor.pre_start():
             return
     # process image to image
-    if has_image_extension(DFF.globals.target_path):
-        if predict_image(DFF.globals.target_path):
+    if has_image_extension(DF.globals.target_path):
+        if predict_image(DF.globals.target_path):
             destroy()
-        shutil.copy2(DFF.globals.target_path, DFF.globals.output_path)
+        shutil.copy2(DF.globals.target_path, DF.globals.output_path)
         # process frame
-        for frame_processor in get_frame_processors_modules(DFF.globals.frame_processors):
+        for frame_processor in get_frame_processors_modules(DF.globals.frame_processors):
             update_status('Progressing...', frame_processor.NAME)
-            frame_processor.process_image(DFF.globals.source_path, DFF.globals.output_path, DFF.globals.output_path)
+            frame_processor.process_image(DF.globals.source_path, DF.globals.output_path, DF.globals.output_path)
             frame_processor.post_process()
         # validate image
-        if is_image(DFF.globals.target_path):
+        if is_image(DF.globals.target_path):
             update_status('Processing to image succeed!')
         else:
             update_status('Processing to image failed!')
         return
     # process image to videos
-    if predict_video(DFF.globals.target_path):
+    if predict_video(DF.globals.target_path):
         destroy()
     update_status('Creating temporary resources...')
-    create_temp(DFF.globals.target_path)
+    create_temp(DF.globals.target_path)
     # extract frames
-    if DFF.globals.keep_fps:
-        fps = detect_fps(DFF.globals.target_path)
+    if DF.globals.keep_fps:
+        fps = detect_fps(DF.globals.target_path)
         update_status(f'Extracting frames with {fps} FPS...')
-        extract_frames(DFF.globals.target_path, fps)
+        extract_frames(DF.globals.target_path, fps)
     else:
         update_status('Extracting frames with 30 FPS...')
-        extract_frames(DFF.globals.target_path)
+        extract_frames(DF.globals.target_path)
     # process frame
-    temp_frame_paths = get_temp_frame_paths(DFF.globals.target_path)
+    temp_frame_paths = get_temp_frame_paths(DF.globals.target_path)
     if temp_frame_paths:
-        for frame_processor in get_frame_processors_modules(DFF.globals.frame_processors):
+        for frame_processor in get_frame_processors_modules(DF.globals.frame_processors):
             update_status('Progressing...', frame_processor.NAME)
-            frame_processor.process_video(DFF.globals.source_path, temp_frame_paths)
+            frame_processor.process_video(DF.globals.source_path, temp_frame_paths)
             frame_processor.post_process()
     else:
         update_status('Frames not found...')
         return
     # create video
-    if DFF.globals.keep_fps:
-        fps = detect_fps(DFF.globals.target_path)
+    if DF.globals.keep_fps:
+        fps = detect_fps(DF.globals.target_path)
         update_status(f'Creating video with {fps} FPS...')
-        create_video(DFF.globals.target_path, fps)
+        create_video(DF.globals.target_path, fps)
     else:
         update_status('Creating video with 30 FPS...')
-        create_video(DFF.globals.target_path)
+        create_video(DF.globals.target_path)
     # handle audio
-    if DFF.globals.skip_audio:
-        move_temp(DFF.globals.target_path, DFF.globals.output_path)
+    if DF.globals.skip_audio:
+        move_temp(DF.globals.target_path, DF.globals.output_path)
         update_status('Skipping audio...')
     else:
-        if DFF.globals.keep_fps:
+        if DF.globals.keep_fps:
             update_status('Restoring audio...')
         else:
             update_status('Restoring audio might cause issues as fps are not kept...')
-        restore_audio(DFF.globals.target_path, DFF.globals.output_path)
+        restore_audio(DF.globals.target_path, DF.globals.output_path)
     # clean temp
     update_status('Cleaning temporary resources...')
-    clean_temp(DFF.globals.target_path)
+    clean_temp(DF.globals.target_path)
     # validate video
-    if is_video(DFF.globals.target_path):
+    if is_video(DF.globals.target_path):
         update_status('Processing to video succeed!')
     else:
         update_status('Processing to video failed!')
 
 
 def destroy() -> None:
-    if DFF.globals.target_path:
-        clean_temp(DFF.globals.target_path)
+    if DF.globals.target_path:
+        clean_temp(DF.globals.target_path)
     sys.exit()
 
 
@@ -209,11 +209,11 @@ def run() -> None:
     parse_args()
     if not pre_check():
         return
-    for frame_processor in get_frame_processors_modules(DFF.globals.frame_processors):
+    for frame_processor in get_frame_processors_modules(DF.globals.frame_processors):
         if not frame_processor.pre_check():
             return
     limit_resources()
-    if DFF.globals.headless:
+    if DF.globals.headless:
         start()
     else:
         window = ui.init(start, destroy)
